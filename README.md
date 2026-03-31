@@ -5,6 +5,14 @@ This project implements a fully automated container deployment platform on AWS u
 
 The system provisions infrastructure, builds containerized applications, and deploys them to a production-ready environment with zero manual intervention.
 
+## Purpose
+The goal of this project is to demonstrate how to:
+- Build an end-to-end CI/CD pipeline for containerized applications
+- Automate infrastructure provisioning and application deployment
+- Deliver scalable, production-ready services with minimal operational overhead
+
+This results in a system that is automated, consistent, and production-aligned.
+
 ## Architecture
 ### High-Level Flow
 1. Users access the application via an Application Load Balancer (ALB)
@@ -23,19 +31,14 @@ The system provisions infrastructure, builds containerized applications, and dep
 - IAM – Secure service-to-service access
 - Security Groups – Controlled network communication
 
-## CI/CD Pipeline
-### Flow
+## Workflow
+### CI/CD Workflow
 1. Code is pushed to repository
 2. Jenkins pipeline is triggered
 3. Application is built and tested
 4. Docker images are built
 5. Images are pushed to ECR
 6. ECS services are updated with new task definitions
-
-### Key Properties
-- Fully automated deployment pipeline
-- Immutable deployments via versioned images
-- Infrastructure + application deployment unified in one pipeline
 
 ## Tech Stack
 - Terraform – Infrastructure as Code
@@ -47,7 +50,6 @@ The system provisions infrastructure, builds containerized applications, and dep
 
 ## Key Engineering Decisions
 ### ECS (Fargate) vs EKS
-
 ECS Fargate was chosen to minimize operational overhead and accelerate delivery.
 - No Kubernetes control plane or node management
 - Built-in scaling and orchestration
@@ -55,7 +57,7 @@ ECS Fargate was chosen to minimize operational overhead and accelerate delivery.
 
 EKS was avoided due to unnecessary complexity for this workload.
 
-## Jenkins vs GitHub Actions
+### Jenkins vs GitHub Actions
 Jenkins was selected for maximum flexibility and control.
 - Full customization of pipeline stages
 - Direct integration with Docker, Terraform, ECS
@@ -63,7 +65,7 @@ Jenkins was selected for maximum flexibility and control.
 
 GitHub Actions was less suitable due to limitations in complex multi-stage workflows.
 
-## EC2-hosted Jenkins
+### EC2-hosted Jenkins
 Jenkins runs on EC2 to enable:
 - Full control over runtime environment
 - Custom tooling (Docker, AWS CLI, plugins)
@@ -71,7 +73,7 @@ Jenkins runs on EC2 to enable:
 
 Managed CI/CD platforms were avoided due to reduced flexibility.
 
-## Image Tagging Strategy
+### Image Tagging Strategy
 Images are tagged using unique build-based identifiers.
 - Each deployment maps to a specific build
 - Enables precise rollbacks
@@ -93,7 +95,6 @@ Images are tagged using unique build-based identifiers.
  
  ## Deployment Workflow (End-to-End)
 This system follows a structured DevOps lifecycle:
-
 1. Local Validation
     - Run frontend + backend locally
     - Verify connectivity
