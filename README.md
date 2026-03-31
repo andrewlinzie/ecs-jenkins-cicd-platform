@@ -1,230 +1,147 @@
-# 🚀 AWS DevOps Pipeline — Full CI/CD with Jenkins, Terraform, ECS Fargate & ALB
-
-This project demonstrates a **production-grade DevOps pipeline** built on AWS, using:
-
-- **Jenkins** (CI/CD automation running in Docker on EC2)
-- **Terraform** (IaC for AWS provisioning)
-- **Amazon ECR** (container registry)
-- **Amazon ECS Fargate** (container orchestration)
-- **Application Load Balancer (ALB)** (traffic routing)
-- **Docker** (containerization of frontend + backend apps)
-- **GitHub** (source control + pipeline triggers)
-
-The pipeline automatically:
-
-1. Pulls code from GitHub  
-2. Builds Docker images for both frontend (React + NGINX) and backend (Node/Express)  
-3. Tags & pushes images to Amazon ECR  
-4. Executes `terraform apply` to deploy new versions to ECS Fargate  
-5. Updates ALB target groups with healthy running containers  
-
-This is a **portfolio-quality project** demonstrating Cloud Engineering, DevOps, CI/CD, IaC, containerization, and AWS infrastructure design.
-
----
-
-## 🏗️ **Architecture Overview**
-
-```text
-GitHub → Jenkins (EC2 + Docker) → ECR → Terraform → ECS Fargate → ALB → Users
-
----
-
-Flow Breakdown:
-- Developer pushes code → GitHub triggers Jenkins.
-- Jenkins builds Docker images, pushes to ECR.
-- Jenkins runs Terraform to update ECS task definitions.
-- ECS pulls images from ECR and deploys new tasks.
-- ALB routes traffic to healthy frontend + backend tasks.
-
----
-
-📦 Technologies Used
-🛠 DevOps & CI/CD
-- Jenkins (Pipeline-as-Code)
-- Docker
-- SSH + GitHub Integration
-
-☁️ AWS Infrastructure
-- ECS Fargate
-- ECR
-- Application Load Balancer (ALB)
-- VPC (subnets, route tables, SGs)
-- IAM Roles
-- CloudWatch (optional logs)
-
-⚙️ IaC
-- Terraform (v1.x)
-- terraform-aws-vpc module
-
-💻 Application Stack
-- Frontend: React → built → served by NGINX
-- Backend: Node.js / Express
-- Dockerized microservices
-
----
-
-📁 Project Structure
-.
-├── backend/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── src/...
-├── frontend/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── src/...
-├── infra/
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-├── Jenkinsfile
-└── README.md
-
----
-
-🚀 Deployment Pipeline (Jenkinsfile Summary)
-
-The pipeline:
-1. Checks out code
-2. Logs into Amazon ECR
-3. Builds Docker images
-4. Tags & pushes images to ECR
-5. Runs Terraform
-6. Deploys to ECS
-
-Snippet:
-stage('Deploy to ECS via Terraform') {
-    steps {
-        withAWS(credentials: 'aws-devops-creds', region: "${AWS_REGION}") {
-            dir('infra') {
-                sh '''
-                    terraform init -input=false
-                    terraform apply -auto-approve \
-                      -var="backend_image=$BACKEND_REPO:latest" \
-                      -var="frontend_image=$FRONTEND_REPO:latest"
-                '''
-            }
-        }
-    }
-}
-
----
-
-🌐 Accessing the App
-
-After deployment, Terraform outputs:
-
-    alb_dns_name = http://<alb-generated-dns>
-
-Front-end loads at the root path:
-
-    http://<ALB_DNS>
-
-Backend reachable at:
-
-    http://<ALB_DNS>/api/
-
----
-
-🧪 Local Development
-
-Backend:
-
-    cd backend
-    npm install
-    npm start
-
-Frontend:
-
-    cd frontend
-    npm install
-    npm start
-
----
-
-⚠️ TEARDOWN GUIDE (Prevent Extra AWS Charges)
-
-When you’re done using this project YOU MUST TEARDOWN ALL RESOURCES, otherwise AWS will continue billing you for:
-- ECS Fargate tasks
-- ALB hourly charges
-- EC2 instance running Jenkins
-- ECR image storage
-- VPC resources
-
-🛑 STEP 1 — Destroy Terraform Infrastructure
-
-From your laptop or local machine:
-
-    cd infra
-
-    terraform destroy \
-    -var="backend_image=<your-backend-ecr-uri>:latest" \
-    -var="frontend_image=<your-frontend-ecr-uri>:latest"
-
-
-Confirm with yes when prompted.
-
-This deletes:
-- ECS cluster
-- Task definitions
-- Services
-- ALB + listeners + target groups
-- VPC & subnets
-- IAM roles created by Terraform
-
----
-
-🛑 STEP 2 — Terminate Jenkins EC2 Server
-
-In AWS console:
-1. Go to EC2 → Instances
-2. Select your jenkins-server
-3. Click Instance state → Terminate
-4. Confirm termination
-
-This stops:
-- EC2 hourly billing
-- EBS volume charges
-
----
-
-🛑 STEP 3 — Delete ECR Repositories (Optional)
-
-If you no longer need the images:
-
-    aws ecr delete-repository --repository-name devops-backend --force --region us-east-1
-    aws ecr delete-repository --repository-name devops-frontend --force --region us-east-1
-
-
---force removes images inside.
-
----
-
-🛑 STEP 4 — Delete Unused IAM Roles (If Not Managed by Terraform)
-
-Go to:
-AWS Console → IAM → Roles
-
-Delete roles created manually (but keep AWS service roles).
-
----
-
-🛑 STEP 5 — Release Elastic IP (Optional)
-
-If you want to avoid charges
-1. EC2 → Elastic IPs
-2. Select the EIP used by Jenkins
-3. Click Release Elastic IP
-
----
-
-🎉 Final Result
-
-You have built a full production-grade CI/CD system:
-- Automated build + deployment pipeline
-- ECS microservices architecture
-- ALB routing with health checks
-- Infrastructure-as-Code through Terraform
-- Dockerized modern application
-
-This project is now portfolio-ready and interview-ready.
+# ECS Jenkins CI/CD Platform
+## Overview
+
+This project implements a fully automated container deployment platform on AWS using ECS Fargate and Jenkins. It eliminates manual deployment workflows by enabling repeatable, versioned, and scalable releases through Infrastructure as Code (Terraform) and CI/CD automation.
+
+The system provisions infrastructure, builds containerized applications, and deploys them to a production-ready environment with zero manual intervention.
+
+## Architecture
+### High-Level Flow
+1. Users access the application via an Application Load Balancer (ALB)
+2. ALB routes traffic to ECS services (frontend + backend)
+3. Backend services communicate internally within the VPC
+4. Jenkins (on EC2) orchestrates the CI/CD pipeline
+5. Docker images are built and pushed to Amazon ECR
+6. Terraform provisions and updates infrastructure
+
+### Core Components
+- ECS Fargate – Serverless container orchestration
+- Jenkins (EC2) – CI/CD control plane
+- ECR – Container image registry
+- ALB – Traffic routing + health checks
+- VPC – Networking isolation (public/private subnets)
+- IAM – Secure service-to-service access
+- Security Groups – Controlled network communication
+
+## CI/CD Pipeline
+### Flow
+1. Code is pushed to repository
+2. Jenkins pipeline is triggered
+3. Application is built and tested
+4. Docker images are built
+5. Images are pushed to ECR
+6. ECS services are updated with new task definitions
+
+### Key Properties
+- Fully automated deployment pipeline
+- Immutable deployments via versioned images
+- Infrastructure + application deployment unified in one pipeline
+
+## Tech Stack
+- Terraform – Infrastructure as Code
+- Docker – Containerization
+- Jenkins – CI/CD automation
+- AWS ECS (Fargate) – Container orchestration
+- Amazon ECR – Image storage
+- NGINX – Frontend container serving
+
+## Key Engineering Decisions
+### ECS (Fargate) vs EKS
+
+ECS Fargate was chosen to minimize operational overhead and accelerate delivery.
+- No Kubernetes control plane or node management
+- Built-in scaling and orchestration
+- Faster time-to-deployment
+
+EKS was avoided due to unnecessary complexity for this workload.
+
+## Jenkins vs GitHub Actions
+Jenkins was selected for maximum flexibility and control.
+- Full customization of pipeline stages
+- Direct integration with Docker, Terraform, ECS
+- Runs on self-managed infrastructure
+
+GitHub Actions was less suitable due to limitations in complex multi-stage workflows.
+
+## EC2-hosted Jenkins
+Jenkins runs on EC2 to enable:
+- Full control over runtime environment
+- Custom tooling (Docker, AWS CLI, plugins)
+- Deep integration with AWS services
+
+Managed CI/CD platforms were avoided due to reduced flexibility.
+
+## Image Tagging Strategy
+Images are tagged using unique build-based identifiers.
+- Each deployment maps to a specific build
+- Enables precise rollbacks
+- Eliminates ambiguity from latest tags
+
+## Infrastructure Highlights
+- ECS Fargate for serverless container execution
+- ALB for public access, routing, and health checks
+- Security groups enforce ALB → ECS traffic boundaries
+- Terraform provisions all infrastructure components
+- IAM roles enable secure Jenkins → AWS interactions
+
+## Notable Features
+- End-to-end CI/CD pipeline (commit → production)
+- Zero-downtime deployments via ECS rolling updates
+- Immutable infrastructure and deployments
+- Scalable container hosting with Fargate
+- Fully reproducible environments via Terraform
+ 
+ ## Deployment Workflow (End-to-End)
+This system follows a structured DevOps lifecycle:
+
+1. Local Validation
+    - Run frontend + backend locally
+    - Verify connectivity
+2. Containerization
+    - Dockerize frontend and backend
+    - Validate containers locally
+3. CI/CD Setup
+    - Deploy Jenkins on EC2
+    - Configure plugins, credentials, and IAM roles
+4. Infrastructure Provisioning
+    - Use Terraform to provision:
+        - ECS cluster
+        - ALB
+        - Networking (VPC, subnets, security groups)
+        - ECR repositories
+5. Pipeline Execution
+    - Jenkins builds images
+    - Pushes to ECR
+    - Applies Terraform updates
+    - Deploys to ECS
+6. Production Deployment
+    - Services run on ECS Fargate
+    - ALB routes traffic to containers
+    - Application is publicly accessible
+7. Validation & Scaling
+    - Health checks via ALB
+    - Monitoring via CloudWatch
+    - Auto-scaling based on load
+
+This aligns directly with a full DevOps lifecycle from local development → production deployment → scaling validation
+
+## Outcomes
+- Eliminated manual deployments
+- Enabled consistent, repeatable releases
+- Reduced operational overhead with serverless containers
+- Established production-ready DevOps workflow
+
+## Future Improvements
+- Add GitOps pipeline (GitHub Actions alternative)
+- Implement blue/green deployments
+- Integrate Secrets Manager / Parameter Store
+- Add observability (logs, metrics dashboards)
+
+## Summary
+This project demonstrates a production-grade CI/CD system that integrates:
+- Infrastructure as Code (Terraform)
+- Containerization (Docker)
+- Orchestration (ECS Fargate)
+- Automation (Jenkins)
+
+It reflects real-world DevOps practices: automation, scalability, reliability, and traceability.
