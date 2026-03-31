@@ -1,5 +1,5 @@
 # Branch Purpose
-This branch explores a production-style multi-repo / environment-based layout for the EKS GitOps platform.
+This branch explores a production-style multi-repo / environment-based layout for the ECS Jenkins CI/CD platform.
 
 Focus areas:
 
